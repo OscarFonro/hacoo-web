@@ -13,54 +13,44 @@
     --hint: var(--tg-theme-hint-color, #8e8e93);
     --accent: var(--tg-theme-button-color, #2ea6ff);
     --accent-text: var(--tg-theme-button-text-color, #fff);
-    --border: rgba(128,128,128,.22);
+    --border: rgba(128,128,128,.2);
   }
   *{box-sizing:border-box}
-  body{
-    margin:0;background:var(--bg);color:var(--text);
-    font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  header{
-    position:sticky;top:0;z-index:10;background:var(--bg);
-    padding:10px 12px 6px;border-bottom:1px solid var(--border);
-  }
-  .search{
-    width:100%;padding:11px 14px;border-radius:12px;border:none;
-    background:var(--card);color:var(--text);font-size:16px;outline:none;
-  }
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);padding:10px 12px 4px;border-bottom:1px solid var(--border)}
+  .search{width:100%;padding:12px 14px;border-radius:12px;border:none;background:var(--card);
+    color:var(--text);font-size:16px;outline:none}
   .search::placeholder{color:var(--hint)}
   .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chip{
-    flex:0 0 auto;padding:7px 13px;border-radius:20px;background:var(--card);
-    color:var(--text);border:1px solid var(--border);font-size:13px;cursor:pointer;
-    white-space:nowrap;user-select:none;
-  }
+  .chip{flex:0 0 auto;padding:8px 14px;border-radius:20px;background:var(--card);color:var(--text);
+    border:1px solid var(--border);font-size:13px;cursor:pointer;white-space:nowrap;user-select:none}
   .chip.active{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
-  .bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;color:var(--hint);font-size:12px}
+  .bar{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;color:var(--hint);font-size:12px}
   .sort{background:none;border:none;color:var(--accent);font-size:13px;cursor:pointer;font-weight:600}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 12px 40px}
-  .card{
-    background:var(--card);border-radius:14px;padding:12px;display:flex;flex-direction:column;
-    gap:8px;border:1px solid var(--border);text-decoration:none;color:inherit;
-  }
-  .card:active{opacity:.7}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 12px 40px}
+  .card{background:var(--card);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
+    text-decoration:none;color:inherit;border:1px solid var(--border)}
+  .card:active{opacity:.75}
+  .imgwrap{position:relative;width:100%;aspect-ratio:1/1;background:#000}
+  .imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
+  .noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:34px;background:#2a2a2c}
+  .plat{position:absolute;top:8px;right:8px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:8px;
+    background:rgba(0,0,0,.6);color:#fff;backdrop-filter:blur(4px)}
+  .body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
   .cat{font-size:11px;color:var(--hint)}
-  .name{font-weight:600;font-size:14px;line-height:1.25;flex:1}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:6px}
-  .price{font-weight:700;font-size:15px}
-  .plat{font-size:10px;padding:2px 7px;border-radius:6px;background:rgba(128,128,128,.2);color:var(--hint)}
-  .go{
-    margin-top:2px;text-align:center;padding:8px;border-radius:10px;
-    background:var(--accent);color:var(--accent-text);font-weight:600;font-size:13px;
-  }
-  .empty{text-align:center;color:var(--hint);padding:60px 20px}
+  .name{font-weight:600;font-size:14px;line-height:1.3;flex:1;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .price{font-weight:800;font-size:17px}
+  .go{margin-top:2px;text-align:center;padding:9px;border-radius:11px;background:var(--accent);
+    color:var(--accent-text);font-weight:600;font-size:13px}
+  .empty{text-align:center;color:var(--hint);padding:60px 20px;grid-column:1/3}
 </style>
 </head>
 <body>
 <header>
-  <input id="q" class="search" type="search" placeholder="Buscar (ej. samba, ralph, bolso…)" autocomplete="off">
+  <input id="q" class="search" type="search" placeholder="Buscar (samba, ralph, bolso…)" autocomplete="off">
   <div class="chips" id="chips"></div>
 </header>
 <div class="bar">
@@ -70,70 +60,48 @@
 <div class="grid" id="grid"></div>
 
 <script>
-const CATS = [
-  ["todo","🛍 Todo"],
-  ["zapatillas","👟 Zapatillas"],
-  ["camisetas","👕 Camisetas"],
-  ["sudaderas","🧥 Sudaderas"],
-  ["complementos","👜 Complementos"],
-  ["otros","📦 Otros"],
-];
-let DATA = [], cat = "todo", q = "", sortNewest = true;
+const CATS=[["todo","🛍 Todo"],["zapatillas","👟 Zapatillas"],["camisetas","👕 Camisetas"],
+  ["sudaderas","🧥 Sudaderas"],["complementos","👜 Complementos"],["otros","📦 Otros"]];
+const CATEMOJI={zapatillas:"👟",camisetas:"👕",sudaderas:"🧥",complementos:"👜",otros:"📦"};
+let DATA=[],cat="todo",q="",newest=true;
 
-const tg = window.Telegram && window.Telegram.WebApp;
-if (tg) { try { tg.ready(); tg.expand(); } catch(e){} }
+const tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){try{tg.ready();tg.expand();}catch(e){}}
 
-const grid = document.getElementById("grid");
-const countEl = document.getElementById("count");
-const chipsEl = document.getElementById("chips");
-
-CATS.forEach(([id,label])=>{
-  const b=document.createElement("div");
-  b.className="chip"+(id==="todo"?" active":"");
-  b.textContent=label; b.dataset.id=id;
+const grid=document.getElementById("grid"),countEl=document.getElementById("count"),chipsEl=document.getElementById("chips");
+CATS.forEach(([id,label])=>{const b=document.createElement("div");
+  b.className="chip"+(id==="todo"?" active":"");b.textContent=label;b.dataset.id=id;
   b.onclick=()=>{cat=id;[...chipsEl.children].forEach(c=>c.classList.toggle("active",c.dataset.id===id));render();};
-  chipsEl.appendChild(b);
-});
-
+  chipsEl.appendChild(b);});
 document.getElementById("q").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
-document.getElementById("sort").addEventListener("click",e=>{
-  sortNewest=!sortNewest;
-  e.target.textContent=sortNewest?"Más recientes ▾":"Precio ▾";
-  render();
-});
+document.getElementById("sort").addEventListener("click",e=>{newest=!newest;
+  e.target.textContent=newest?"Más recientes ▾":"Precio ▾";render();});
 
 function render(){
-  let list = DATA.filter(x=>
-    (cat==="todo"||x.c===cat) &&
-    (!q || x.n.toLowerCase().includes(q))
-  );
-  if(sortNewest) list.sort((a,b)=>b.t-a.t);
-  else list.sort((a,b)=>(parseFloat(a.p)||1e9)-(parseFloat(b.p)||1e9));
-
-  countEl.textContent = list.length+" producto"+(list.length!==1?"s":"");
-  if(!list.length){grid.innerHTML='<div class="empty">Sin resultados</div>';return;}
-
+  let list=DATA.filter(x=>(cat==="todo"||x.c===cat)&&(!q||x.n.toLowerCase().includes(q)));
+  list.sort(newest?(a,b)=>b.t-a.t:(a,b)=>(parseFloat(a.p)||1e9)-(parseFloat(b.p)||1e9));
+  countEl.textContent=list.length+" producto"+(list.length!==1?"s":"");
   grid.innerHTML="";
-  const catMap=Object.fromEntries(CATS);
+  if(!list.length){grid.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  const frag=document.createDocumentFragment();
   list.slice(0,600).forEach(x=>{
-    const a=document.createElement("a");
-    a.className="card"; a.href=x.u; a.target="_blank"; a.rel="noopener";
-    if(tg) a.onclick=(ev)=>{ev.preventDefault();tg.openLink(x.u);};
-    a.innerHTML=`
-      <div class="cat">${catMap[x.c]||"📦 Otros"}</div>
-      <div class="name">${esc(x.n)}</div>
-      <div class="row">
-        <span class="price">${x.p?x.p+"€":"—"}</span>
-        <span class="plat">${x.pl==="yepexpress"?"yep":"hacoo"}</span>
-      </div>
-      <div class="go">Ver oferta</div>`;
-    grid.appendChild(a);
+    const a=document.createElement("a");a.className="card";a.href=x.u;a.target="_blank";a.rel="noopener";
+    if(tg)a.onclick=(ev)=>{ev.preventDefault();tg.openLink(x.u);};
+    const img=x.img?`<img loading="lazy" src="img/${x.img}" alt="">`:`<div class="noimg">${CATEMOJI[x.c]||"🛍"}</div>`;
+    a.innerHTML=`<div class="imgwrap">${img}<span class="plat">${x.pl==="yepexpress"?"yep":"hacoo"}</span></div>
+      <div class="body">
+        <div class="cat">${CATEMOJI[x.c]||"📦"} ${x.c}</div>
+        <div class="name">${esc(x.n)}</div>
+        <div class="price">${x.p?x.p+"€":"—"}</div>
+        <div class="go">Ver oferta</div>
+      </div>`;
+    frag.appendChild(a);
   });
+  grid.appendChild(frag);
 }
 function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
-fetch("products.json?_="+Date.now())
-  .then(r=>r.json())
+fetch("products.json?_="+Date.now()).then(r=>r.json())
   .then(d=>{DATA=d.items||[];render();})
   .catch(()=>{countEl.textContent="Error cargando productos";});
 </script>

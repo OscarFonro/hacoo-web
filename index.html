@@ -65,6 +65,7 @@
 const CATS=[["todo","🛍 Todo"],["zapatillas","👟 Zapatillas"],["camisetas","👕 Camisetas"],
   ["sudaderas","🧥 Sudaderas"],["banadores","🩱 Bañadores"],["complementos","👜 Complementos"],["otros","📦 Otros"]];
 const CATEMOJI={zapatillas:"👟",camisetas:"👕",sudaderas:"🧥",banadores:"🩱",complementos:"👜",otros:"📦"};
+const CATNAME={zapatillas:"Zapatillas",camisetas:"Camisetas",sudaderas:"Sudaderas",banadores:"Bañadores",complementos:"Complementos",otros:"Otros"};
 let DATA=[],cat="todo",q="",newest=true;
 
 const tg=window.Telegram&&window.Telegram.WebApp;
@@ -92,7 +93,7 @@ function render(){
     const img=x.img?`<img loading="lazy" src="img/${x.img}" alt="">`:`<div class="noimg">${CATEMOJI[x.c]||"🛍"}</div>`;
     a.innerHTML=`<div class="imgwrap">${img}<span class="plat">${x.pl==="yepexpress"?"yep":"hacoo"}</span></div>
       <div class="body">
-        <div class="cat">${CATEMOJI[x.c]||"📦"} ${x.c}</div>
+        <div class="cat">${CATEMOJI[x.c]||"📦"} ${CATNAME[x.c]||x.c}</div>
         <div class="name">${esc(x.n)}</div>
         ${x.p?`<div class="price">${x.p}€</div>`:``}
         <div class="go">Ver oferta</div>

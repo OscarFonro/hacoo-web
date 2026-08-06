@@ -66,7 +66,8 @@ const CATS=[["todo","🛍 Todo"],["zapatillas","👟 Zapatillas"],["camisetas","
   ["sudaderas","🧥 Sudaderas"],["banadores","🩱 Bañadores"],["complementos","👜 Complementos"],["otros","📦 Otros"]];
 const CATEMOJI={zapatillas:"👟",camisetas:"👕",sudaderas:"🧥",banadores:"🩱",complementos:"👜",otros:"📦"};
 const CATNAME={zapatillas:"Zapatillas",camisetas:"Camisetas",sudaderas:"Sudaderas",banadores:"Bañadores",complementos:"Complementos",otros:"Otros"};
-let DATA=[],cat="todo",q="",newest=true;
+let DATA=[],OVR={},cat="todo",q="",newest=true;
+const catOf=x=>OVR[x.u]||x.c;  // categoría corregida por CLIP si existe
 
 const tg=window.Telegram&&window.Telegram.WebApp;
 if(tg){try{tg.ready();tg.expand();}catch(e){}}
@@ -81,7 +82,7 @@ document.getElementById("sort").addEventListener("click",e=>{newest=!newest;
   e.target.textContent=newest?"Más recientes ▾":"Precio ▾";render();});
 
 function render(){
-  let list=DATA.filter(x=>(cat==="todo"||x.c===cat)&&(!q||x.n.toLowerCase().includes(q)));
+  let list=DATA.filter(x=>(cat==="todo"||catOf(x)===cat)&&(!q||x.n.toLowerCase().includes(q)));
   list.sort(newest?(a,b)=>b.t-a.t:(a,b)=>(parseFloat(a.p)||1e9)-(parseFloat(b.p)||1e9));
   countEl.textContent=list.length+" producto"+(list.length!==1?"s":"");
   grid.innerHTML="";
@@ -90,10 +91,11 @@ function render(){
   list.slice(0,600).forEach(x=>{
     const a=document.createElement("a");a.className="card";a.href=x.u;a.target="_blank";a.rel="noopener";
     if(tg)a.onclick=(ev)=>{ev.preventDefault();tg.openLink(x.u);};
-    const img=x.img?`<img loading="lazy" src="img/${x.img}" alt="">`:`<div class="noimg">${CATEMOJI[x.c]||"🛍"}</div>`;
+    const c=catOf(x);
+    const img=x.img?`<img loading="lazy" src="img/${x.img}" alt="">`:`<div class="noimg">${CATEMOJI[c]||"🛍"}</div>`;
     a.innerHTML=`<div class="imgwrap">${img}<span class="plat">${x.pl==="yepexpress"?"yep":"hacoo"}</span></div>
       <div class="body">
-        <div class="cat">${CATEMOJI[x.c]||"📦"} ${CATNAME[x.c]||x.c}</div>
+        <div class="cat">${CATEMOJI[c]||"📦"} ${CATNAME[c]||c}</div>
         <div class="name">${esc(x.n)}</div>
         ${x.p?`<div class="price">${x.p}€</div>`:``}
         <div class="go">Ver oferta</div>
@@ -104,8 +106,10 @@ function render(){
 }
 function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
-fetch("products.json?_="+Date.now()).then(r=>r.json())
-  .then(d=>{DATA=d.items||[];render();})
+Promise.all([
+  fetch("products.json?_="+Date.now()).then(r=>r.json()),
+  fetch("overrides.json?_="+Date.now()).then(r=>r.ok?r.json():{}).catch(()=>({}))
+]).then(([d,ovr])=>{DATA=d.items||[];OVR=ovr||{};render();})
   .catch(()=>{countEl.textContent="Error cargando productos";});
 </script>
 </body>

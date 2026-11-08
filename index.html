@@ -22,6 +22,11 @@
   .search{width:100%;padding:12px 14px;border-radius:12px;border:none;background:var(--card);
     color:var(--text);font-size:16px;outline:none}
   .search::placeholder{color:var(--hint)}
+  .row{display:flex;gap:8px}
+  .cam{flex:0 0 auto;width:48px;display:flex;align-items:center;justify-content:center;border-radius:12px;
+    background:var(--card);font-size:20px;cursor:pointer}
+  .simbar{display:flex;justify-content:space-between;align-items:center;padding:8px 2px 0;color:var(--hint);font-size:13px}
+  .simbar[hidden]{display:none}
   .chips{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
   .chip{flex:0 0 auto;padding:8px 14px;border-radius:20px;background:var(--card);color:var(--text);
@@ -52,7 +57,11 @@
 </head>
 <body>
 <header>
-  <input id="q" class="search" type="search" placeholder="Buscar (samba, ralph, bolso…)" autocomplete="off">
+  <div class="row">
+    <input id="q" class="search" type="search" placeholder="Buscar (samba, ralph, bolso…)" autocomplete="off">
+    <label class="cam" aria-label="Buscar por foto">📷<input id="photo" type="file" accept="image/*" hidden></label>
+  </div>
+  <div class="simbar" id="simbar" hidden><span id="simtxt"></span><button class="sort" id="simclear">✕ Quitar foto</button></div>
   <div class="chips" id="chips"></div>
 </header>
 <div class="bar">
@@ -83,7 +92,8 @@ document.getElementById("sort").addEventListener("click",e=>{newest=!newest;
 
 function render(){
   let list=DATA.filter(x=>(cat==="todo"||catOf(x)===cat)&&(!q||x.n.toLowerCase().includes(q)));
-  list.sort(newest?(a,b)=>b.t-a.t:(a,b)=>(parseFloat(a.p)||1e9)-(parseFloat(b.p)||1e9));
+  if(SIM)list.sort((a,b)=>(SIM[b.u]??-1)-(SIM[a.u]??-1));
+  else list.sort(newest?(a,b)=>b.t-a.t:(a,b)=>(parseFloat(a.p)||1e9)-(parseFloat(b.p)||1e9));
   countEl.textContent=list.length+" producto"+(list.length!==1?"s":"");
   grid.innerHTML="";
   if(!list.length){grid.innerHTML='<div class="empty">Sin resultados</div>';return;}
@@ -104,6 +114,34 @@ function render(){
   });
   grid.appendChild(frag);
 }
+// Buscador por foto: MobileCLIP-S0 en el navegador (mismo modelo/dtype que embed_images.mjs).
+// El navegador guarda el modelo (~23 MB) en caché: solo se descarga la primera vez.
+let SIM=null,EMB=null;
+const simbar=document.getElementById("simbar"),simtxt=document.getElementById("simtxt");
+async function loadEmb(){
+  if(EMB)return EMB;
+  const [meta,bin,tf]=await Promise.all([
+    fetch("embeddings.json?_="+Date.now()).then(r=>r.json()),
+    fetch("embeddings.bin?_="+Date.now()).then(r=>r.arrayBuffer()),
+    import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1")]);
+  const processor=await tf.AutoProcessor.from_pretrained(meta.model);
+  const model=await tf.CLIPVisionModelWithProjection.from_pretrained(meta.model,{dtype:meta.dtype});
+  return EMB={meta,E:new Int8Array(bin),processor,model,tf};
+}
+document.getElementById("photo").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  simbar.hidden=false;simtxt.textContent=EMB?"Analizando foto…":"Cargando buscador por foto (solo la 1ª vez, ~23 MB)…";
+  try{
+    const {meta,E,processor,model,tf}=await loadEmb();
+    simtxt.textContent="Analizando foto…";
+    const {image_embeds}=await model(await processor(await tf.RawImage.fromBlob(f)));
+    const v=image_embeds.data;let n=0;for(const x of v)n+=x*x;n=Math.sqrt(n)||1;
+    SIM={};meta.urls.forEach((u,i)=>{let d=0;for(let j=0;j<meta.dim;j++)d+=v[j]*E[i*meta.dim+j];SIM[u]=d/n/127;});
+    simtxt.textContent="📷 Ordenado por parecido a tu foto";window.scrollTo(0,0);render();
+  }catch(err){console.error(err);SIM=null;simtxt.textContent="No se pudo analizar la foto";}
+});
+document.getElementById("simclear").onclick=()=>{SIM=null;simbar.hidden=true;render();};
+
 function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 
 Promise.all([

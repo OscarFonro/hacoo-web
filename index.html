@@ -130,15 +130,18 @@ async function loadEmb(){
 }
 document.getElementById("photo").addEventListener("change",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
-  simbar.hidden=false;simtxt.textContent=EMB?"Analizando foto…":"Cargando buscador por foto (solo la 1ª vez, ~23 MB)…";
+  // Mientras carga no se muestra la lista: si no, parece que la foto da resultados sin relación.
+  const wait=t=>{simtxt.textContent=t;countEl.textContent="";grid.innerHTML=`<div class="empty">⏳<br>${t}</div>`;};
+  simbar.hidden=false;window.scrollTo(0,0);
+  wait(EMB?"Analizando foto…":"Preparando el buscador por foto…<br>(solo la 1ª vez, ~23 MB)");
   try{
     const {meta,E,processor,model,tf}=await loadEmb();
-    simtxt.textContent="Analizando foto…";
+    wait("Analizando foto…");
     const {image_embeds}=await model(await processor(await tf.RawImage.fromBlob(f)));
     const v=image_embeds.data;let n=0;for(const x of v)n+=x*x;n=Math.sqrt(n)||1;
     SIM={};meta.urls.forEach((u,i)=>{let d=0;for(let j=0;j<meta.dim;j++)d+=v[j]*E[i*meta.dim+j];SIM[u]=d/n/127;});
     simtxt.textContent="📷 Ordenado por parecido a tu foto";window.scrollTo(0,0);render();
-  }catch(err){console.error(err);SIM=null;simtxt.textContent="No se pudo analizar la foto";}
+  }catch(err){console.error(err);SIM=null;render();simtxt.textContent="No se pudo analizar la foto";}
 });
 document.getElementById("simclear").onclick=()=>{SIM=null;simbar.hidden=true;render();};
 
